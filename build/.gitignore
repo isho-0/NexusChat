@@ -1,0 +1,24 @@
+# build file
+/build/
+
+# cmake file
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# object file
+*.o
+*.obj
+
+# binaries file
+*.exe
+*.out
+*.a
+*.so
+*.dll
+
+# vsc debug file
+*.pdb
+*.ilk
+*.idb
