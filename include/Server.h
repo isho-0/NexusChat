@@ -18,6 +18,7 @@ public:
 
     void start();
     void stop();
+    
 
 private:
     int port;
@@ -26,6 +27,8 @@ private:
 
     std::vector<SOCKET> clientSockets;
     std::mutex clientsMutex;
+
+    void handleClient(SOCKET clientSocket);
 };
 
 #endif

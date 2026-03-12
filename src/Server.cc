@@ -43,4 +43,47 @@ void Server::start() {
     }
 
     std::cout << "Server started on port " << port << ". Waiting for connections..." << std::endl;
+    running = true;
+    
+    while (running) {
+        // accept
+        sockaddr_in clientAddr;
+        int clientAddrSize = sizeof(clientAddr);
+
+        SOCKET clientSocket = accept(listenSocket, (struct sockaddr*)&clientAddr, &clientAddrSize);
+
+        if (clientSocket == INVALID_SOCKET) {
+            std::cerr << "Accept failed!" << std::endl;
+            continue;
+        }
+
+        std::cout << "New client connected!" << std::endl;
+
+        std::thread clientThread(&Server::handleClient, this, clientSocket);
+
+        clientThread.detach();
+    }
+}
+
+void Server::handleClient(SOCKET clientSocket) {
+    char buffer[1024];
+
+    while (true) {
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+        if (bytesReceived <= 0) {
+        std::cout << "Client disconnected." << std::endl;
+        closesocket(clientSocket);
+        break;
+        }
+
+        buffer[bytesReceived] = '\0';
+        std::cout << "Received: " << buffer << std::endl;
+    
+        buffer[bytesReceived] = '\0';
+        std::cout << "Received: " << buffer << std::endl;
+
+        send(clientSocket, buffer, bytesReceived, 0);
+    }
+
 }
