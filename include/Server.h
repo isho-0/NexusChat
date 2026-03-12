@@ -1,34 +1,32 @@
-#ifndef SERVER_H
-#define SERVER_H
-
-#include <iostream>
-#include <vector>
-#include <thread>
-#include <mutex>
+#ifndef NEXUSCHAT_SERVER_H_
+#define NEXUSCHAT_SERVER_H_
 
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
+#include <iostream>
+#include <mutex>
+#include <thread>
+#include <vector>
+
 #pragma comment(lib, "ws2_32.lib")
 
 class Server {
-public:
-    Server(int port);
-    ~Server();
+ public:
+  Server(int port);
+  ~Server();
 
-    void start();
-    void stop();
-    
+  void Start();
+  void Stop();
 
-private:
-    int port;
-    SOCKET listenSocket;
-    bool running;
+ private:
+  void HandleClient(SOCKET client_socket);
 
-    std::vector<SOCKET> clientSockets;
-    std::mutex clientsMutex;
-
-    void handleClient(SOCKET clientSocket);
+  int port_;
+  SOCKET listen_socket_;
+  bool running_;
+  std::vector<SOCKET> client_sockets_;
+  std::mutex clients_mutex_;
 };
 
-#endif
+#endif  // NEXUSCHAT_SERVER_H_

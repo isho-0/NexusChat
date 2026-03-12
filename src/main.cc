@@ -3,12 +3,12 @@
 #include <iostream>
 
 int main() {
-    Server Server(9060);
+  Server server(9060);
 
-    Server.start();
+  server.Start();
 
-    std::cout << "Server setup successful. Press Enter to exit..." << std::endl;
-    std::cin.get();
+  std::cout << "Server setup successful. Press Enter to exit..." << std::endl;
+  std::cin.get();
 
-    return 0;
+  return 0;
 }

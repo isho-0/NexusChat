@@ -1,89 +1,83 @@
 #include "Server.h"
 
-Server::Server(int port) : port(port), listenSocket(INVALID_SOCKET), running(false) {
-    WSADATA wsaData;
+#include <iostream>
 
-    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (result != 0) {
-        std::cerr << "WSAStartup failed: " << result << std::endl;
-    }
+Server::Server(int port)
+    : port_(port), listen_socket_(INVALID_SOCKET), running_(false) {
+  WSADATA wsa_data;
+
+  int result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+  if (result != 0) {
+    std::cerr << "WSAStartup failed: " << result << std::endl;
+  }
 }
 
-Server::~Server() {
-    WSACleanup();
+Server::~Server() { WSACleanup(); }
+
+void Server::Start() {
+  listen_socket_ = socket(AF_INET, SOCK_STREAM, 0);
+  if (listen_socket_ == INVALID_SOCKET) {
+    std::cerr << "Socket creation failed!" << std::endl;
+    return;
+  }
+
+  sockaddr_in server_addr;
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = htons(port_);
+
+  if (bind(listen_socket_, reinterpret_cast<struct sockaddr*>(&server_addr),
+           sizeof(server_addr)) == SOCKET_ERROR) {
+    std::cerr << "Bind failed!" << std::endl;
+    closesocket(listen_socket_);
+    return;
+  }
+
+  if (listen(listen_socket_, SOMAXCONN) == SOCKET_ERROR) {
+    std::cerr << "Listen failed!" << std::endl;
+    closesocket(listen_socket_);
+    return;
+  }
+
+  std::cout << "Server started on port " << port_
+            << ". Waiting for connections..." << std::endl;
+  running_ = true;
+
+  while (running_) {
+    sockaddr_in client_addr;
+    int client_addr_size = sizeof(client_addr);
+
+    SOCKET client_socket =
+        accept(listen_socket_, reinterpret_cast<struct sockaddr*>(&client_addr),
+               &client_addr_size);
+
+    if (client_socket == INVALID_SOCKET) {
+      std::cerr << "Accept failed!" << std::endl;
+      continue;
+    }
+
+    std::cout << "New client connected!" << std::endl;
+
+    std::thread client_thread(&Server::HandleClient, this, client_socket);
+    client_thread.detach();
+  }
 }
 
-void Server::start() {
-    // socket
-    listenSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (listenSocket == INVALID_SOCKET) {
-        std::cerr << "Socket creation failed!" << std::endl;
-        return;
+void Server::HandleClient(SOCKET client_socket) {
+  char buffer[1024];
+
+  while (true) {
+    int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+
+    if (bytes_received <= 0) {
+      std::cout << "Client disconnected." << std::endl;
+      closesocket(client_socket);
+      break;
     }
 
+    buffer[bytes_received] = '\0';
+    std::cout << "Received: " << buffer << std::endl;
 
-    // add struct sockaddr_in for bind
-    sockaddr_in serverAddr;                     
-    serverAddr.sin_family = AF_INET;            // IPv4
-    serverAddr.sin_addr.s_addr = INADDR_ANY;    // IP 접근 허용
-    serverAddr.sin_port = htons(port);          // 포트 번호 설정 - hton: Host To Network Short 변환
-    
-    // bind
-    if (bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
-        std::cerr << "Bind failed!" << std::endl;
-        closesocket(listenSocket);
-        return;
-    }
-
-    // listen
-    if (listen(listenSocket, SOMAXCONN) == SOCKET_ERROR) {
-        std::cerr << "Listen failed!" << std::endl;
-        closesocket(listenSocket);
-        return;
-    }
-
-    std::cout << "Server started on port " << port << ". Waiting for connections..." << std::endl;
-    running = true;
-    
-    while (running) {
-        // accept
-        sockaddr_in clientAddr;
-        int clientAddrSize = sizeof(clientAddr);
-
-        SOCKET clientSocket = accept(listenSocket, (struct sockaddr*)&clientAddr, &clientAddrSize);
-
-        if (clientSocket == INVALID_SOCKET) {
-            std::cerr << "Accept failed!" << std::endl;
-            continue;
-        }
-
-        std::cout << "New client connected!" << std::endl;
-
-        std::thread clientThread(&Server::handleClient, this, clientSocket);
-
-        clientThread.detach();
-    }
-}
-
-void Server::handleClient(SOCKET clientSocket) {
-    char buffer[1024];
-
-    while (true) {
-        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
-
-        if (bytesReceived <= 0) {
-        std::cout << "Client disconnected." << std::endl;
-        closesocket(clientSocket);
-        break;
-        }
-
-        buffer[bytesReceived] = '\0';
-        std::cout << "Received: " << buffer << std::endl;
-    
-        buffer[bytesReceived] = '\0';
-        std::cout << "Received: " << buffer << std::endl;
-
-        send(clientSocket, buffer, bytesReceived, 0);
-    }
-
+    send(client_socket, buffer, bytes_received, 0);
+  }
 }
