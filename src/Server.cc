@@ -12,3 +12,35 @@ Server::Server(int port) : port(port), listenSocket(INVALID_SOCKET), running(fal
 Server::~Server() {
     WSACleanup();
 }
+
+void Server::start() {
+    // socket
+    listenSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (listenSocket == INVALID_SOCKET) {
+        std::cerr << "Socket creation failed!" << std::endl;
+        return;
+    }
+
+
+    // add struct sockaddr_in for bind
+    sockaddr_in serverAddr;                     
+    serverAddr.sin_family = AF_INET;            // IPv4
+    serverAddr.sin_addr.s_addr = INADDR_ANY;    // IP 접근 허용
+    serverAddr.sin_port = htons(port);          // 포트 번호 설정 - hton: Host To Network Short 변환
+    
+    // bind
+    if (bind(listenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+        std::cerr << "Bind failed!" << std::endl;
+        closesocket(listenSocket);
+        return;
+    }
+
+    // listen
+    if (listen(listenSocket, SOMAXCONN) == SOCKET_ERROR) {
+        std::cerr << "Listen failed!" << std::endl;
+        closesocket(listenSocket);
+        return;
+    }
+
+    std::cout << "Server started on port " << port << ". Waiting for connections..." << std::endl;
+}
