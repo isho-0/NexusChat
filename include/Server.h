@@ -1,8 +1,8 @@
 #ifndef NEXUSCHAT_SERVER_H_
 #define NEXUSCHAT_SERVER_H_
 
-#include <winsock2.h>
 #include <WS2tcpip.h>
+#include <winsock2.h>
 
 #include <iostream>
 #include <mutex>
