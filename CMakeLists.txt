@@ -9,6 +9,7 @@ include_directories(include)
 add_executable(NexusChat
     src/main.cc
     src/Server.cc
+    src/Socket.cc
 )
 
 if (Win32)
