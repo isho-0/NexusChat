@@ -1,9 +1,12 @@
 #include "Server.h"
 
 #include <iostream>
+#include <cstdint>
 
 Server::Server(int port)
-    : port_(port), listen_socket_(std::make_unique<Socket>()), running_(false) {}
+    : port_(port),
+      listen_socket_(std::make_unique<Socket>()),
+      running_(false) {}
 
 Server::~Server() {}
 
@@ -60,16 +63,35 @@ void Server::HandleClient(Socket* client_socket) {
     }
 
     buffer[bytes_received] = '\0';
-    std::cout << "Received: " << buffer << std::endl;
 
-    client_socket->Send(buffer, bytes_received);
+    std::string msg =
+        "Client[" +
+        std::to_string(reinterpret_cast<std::uintptr_t>(client_socket)) +
+        "]: " + buffer;
+    std::cout << msg << std::endl;
+
+    Broadcast(msg, client_socket);
   }
 
   std::lock_guard<std::mutex> lock(clients_mutex_);
   client_sockets_.erase(
-      std::remove_if(client_sockets_.begin(), client_sockets_.end(),
-                     [client_socket](const std::unique_ptr<Socket>& sock) {
-                       return sock.get() == client_socket;
-                     }),
-      client_sockets_.end());
+    std::remove_if(
+      client_sockets_.begin(), client_sockets_.end(),
+      [client_socket](const std::unique_ptr<Socket>& sock) {
+        return sock.get() == client_socket;
+      }),
+    client_sockets_.end()
+  );
+}
+
+void Server::Broadcast(const std::string& message, Socket* sender) {
+  std::lock_guard<std::mutex> lock(clients_mutex_);
+
+  for (const auto& client : client_sockets_) {
+    if (client.get() == sender) {
+      continue;
+    }
+
+    client->Send(message.data(), message.size());
+  }
 }

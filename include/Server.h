@@ -1,14 +1,14 @@
 #ifndef NEXUSCHAT_SERVER_H_
 #define NEXUSCHAT_SERVER_H_
 
-#include "Socket.h"
-
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
+
+#include "Socket.h"
 
 class Server {
  public:
@@ -20,6 +20,7 @@ class Server {
 
  private:
   void HandleClient(Socket* client_socket);
+  void Broadcast(const std::string& message, Socket* sender);
 
   int port_;
   std::unique_ptr<Socket> listen_socket_;
